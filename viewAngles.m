@@ -46,15 +46,15 @@ function viewAngles(angleFile)
             
         else
             
-            plotBonds(p, bonds, phi);
+            p = plotBonds(p, bonds, phi);
             
         end
         
         hold on
         
-        lp = plot3(leadBond(1, :), leadBond(2, :), leadBond(3, :), 'y-', 'linewidth', 4);
-        tp = plot3(tailBond(1, :), tailBond(2, :), tailBond(3, :), 'y-', 'linewidth', 4);
-        mp = plot3(middleBond(1, :), middleBond(2, :), middleBond(3, :), 'g-', 'linewidth', 4);
+        % lp = plot3(leadBond(1, :), leadBond(2, :), leadBond(3, :), 'y-', 'linewidth', 4);
+        % tp = plot3(tailBond(1, :), tailBond(2, :), tailBond(3, :), 'y-', 'linewidth', 4);
+        % mp = plot3(middleBond(1, :), middleBond(2, :), middleBond(3, :), 'g-', 'linewidth', 4);
         
         titleLine = 'Phi: [ ';
         for j = 1:numTwists
@@ -64,7 +64,7 @@ function viewAngles(angleFile)
         title(titleLine)
         
         pause
-        delete(lp), delete(tp), delete(mp)
+        % delete(lp), delete(tp), delete(mp)
         
     end
     

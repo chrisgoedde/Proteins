@@ -57,7 +57,7 @@ function viewBonds(N, l, theta)
         % the entire chain.
         
         bonds = findBonds(N, l, theta, phi);
-        plotBonds(p, bonds, phi);
+        p = plotBonds(p, bonds, phi);
         
     end
     
