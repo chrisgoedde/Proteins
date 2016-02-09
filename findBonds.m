@@ -4,9 +4,15 @@ function bonds = findBonds(N, l, theta, phi)
     % input parameters are:
     % N = number of bonds
     % l = length of each bond
-    % theta = a fixed bond angle, the same for each bond
+    % theta = one of two bond angles, can be a single value, which will
+    % result in the same theta for every bond, or a row vector of N values
     % phi a row vector containing the N values of the angle phi for all the
     % bonds
+    % Note that theta and phi are expressed in degrees and we must convert
+    % them to radians before we do anything else
+    
+    theta = theta * pi/180;
+    phi = phi * pi/180;
     
     T = eye(3);
     
@@ -23,7 +29,7 @@ function bonds = findBonds(N, l, theta, phi)
     
     for i = 2:N
         
-        T = T * transform(theta, phi(i-1));
+        T = T * transform(theta(i-1), phi(i-1));
         newHead = head + T * [ l ; 0 ; 0 ];
         newTransHead = head + T * [ 0 ; l ; 0 ];
         bonds{i} = [ head newHead head newTransHead ];

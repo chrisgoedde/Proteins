@@ -1,18 +1,18 @@
-function alignBonds(theta, twistLinks)
+function findSpiral(theta0, phi0, twistLinks)
     
-    N = 20;
+    N = 30;
     l = 1;
-    theta = theta*pi/180;
-    phi = zeros(1, N);
+    theta = theta0 * ones(1, N);
     
     numTwists = length(twistLinks);
     
     count = 0;
     
-    numAngles = 60;
-    angleSet = linspace(-pi, pi, numAngles+1);
+    numAngles = 3;
+    angleSet = linspace(0, 360, numAngles+1) + phi0;
     angleSet = angleSet(1:end-1);
     
+    phi = phi0 * ones(1, N);
     numTries = numAngles^numTwists;
     angleList = [];
     
@@ -42,8 +42,6 @@ function alignBonds(theta, twistLinks)
             
         end
         
-        middleBond = [ bonds{twistLinks(1)+1}(:,1) bonds{twistLinks(end)+1}(:,2) ];
-        
         if isEven(N-twistLinks(end))
             
             tailBond = [ bonds{twistLinks(end)+1}(:,2) bonds{end-1}(:,2) ];
@@ -54,9 +52,10 @@ function alignBonds(theta, twistLinks)
             
         end
         
+        middleBond = [ bonds{twistLinks(1)+1}(:,1) bonds{twistLinks(end)+1}(:,2) ];
+
         leadVector = leadBond(:,2) - leadBond(:,1);
         tailVector = tailBond(:,2) - tailBond(:,1);
-        middleVector = middleBond(:,2) - middleBond(:,1);
         
         alignment = (leadVector' * tailVector)/(norm(leadVector)*norm(tailVector));
         
@@ -64,16 +63,16 @@ function alignBonds(theta, twistLinks)
         
         if abs(1-alignment) < 0.0001
             
-            offset = norm(cross(middleVector, leadVector))/norm(leadVector);
+            numTwists = length(twistLinks);
             
-            printAngles(offset, twistAngles)
+            offset = maxOffset(bonds, leadVector);
             
-            if offset < 0.5
-                
+            if offset <= 5 && twistAngles(1) ~= phi0 && twistAngles(end) ~= phi0
+            
                 angleList = [ angleList ; twistAngles ]; %#ok<AGROW>
+                printAngles(offset, twistAngles)
                 
-                %{
-                plotBonds([], bonds, phi);
+                plotBonds([], bonds, phi, phi0);
                 hold on
                 
                 plot3(leadBond(1, :), leadBond(2, :), leadBond(3, :), 'y-', 'linewidth', 4);
@@ -84,23 +83,35 @@ function alignBonds(theta, twistLinks)
                 
                 titleLine = 'Phi: [ ';
                 for j = 1:numTwists
-                    titleLine = [ titleLine sprintf('%.1f ', twistAngles(j)*180/pi) ]; %#ok<AGROW>
+                    titleLine = [ titleLine sprintf('%.1f ', twistAngles(j)) ]; %#ok<AGROW>
                 end
                 titleLine = [ titleLine ']' ]; %#ok<AGROW>
-                title(titleLine)
+                title({ sprintf('Offset = %.2f', offset) ; titleLine })
                 
                 pause
                 close(gcf)
-                %}
-                
-            end
             
+            end
+                
         end
         
     end
     
-    saveFile = sprintf('../Data/Angles-%dx%d', round(theta*180/pi), length(twistLinks));
-    save(saveFile, 'angleList')
+    if ~isempty(angleList)
+        
+        saveFile = sprintf('../Data/Spiral-%d-%dx%d', round(theta0), round(phi0), length(twistLinks));
+        save(saveFile, 'angleList', 'N', 'theta0', 'phi0', 'twistLinks')
+        
+        [ rows, ~ ] = size(angleList);
+        fprintf('Found %d spiral(s) for (theta, phi) = (%d, %d), links %d:%d\n', ...
+            rows, theta0, phi0, twistLinks(1), twistLinks(end))
+        
+    else
+        
+        fprintf('Didn''t find any spirals for (theta, phi) = (%d, %d), links %d:%d\n', ...
+            theta0, phi0, twistLinks(1), twistLinks(end))
+        
+    end
     
     function angles = findAngles
         
@@ -138,11 +149,11 @@ function alignBonds(theta, twistLinks)
     
     function printAngles(offset, twistAngles)
         
-        theString = sprintf('offset = %.2f, angles = [', offset);
+        theString = sprintf('offset = %.2f, angles = [', max(offset));
         
         for index = 1: length(twistAngles)
             
-            theString = sprintf('%s %.2f', theString, twistAngles(index)*180/pi);
+            theString = sprintf('%s %.2f', theString, twistAngles(index));
             
         end
         

@@ -1,22 +1,21 @@
-function viewAngles(angleFile)
+function viewSpiral(angleFile)
     
-    N = 20;
     l = 1;
     
-    angleList = [];
+    angleList = []; theta0 = []; phi0 = []; twistLinks = []; N = [];
     saveFile = sprintf('../Data/%s', angleFile);
     load(saveFile);
     
     [ numAngles, numTwists ] = size(angleList);
-    twistLinks = 4:(4+numTwists-1);
     
     fprintf('There are %d sets of angles in file %s.mat.\n', numAngles, angleFile)
     
     for i = 1:numAngles
         
-        phi = [ zeros(1,3) angleList(i,:) zeros(1, N-(numTwists+3)) ];
+        phi = phi0 * ones(1, N);
+        phi(twistLinks) = angleList(i,:);
         
-        bonds = findBonds(N, l, 30*pi/180, phi);
+        bonds = findBonds(N, l, theta0 * ones(1, N), phi);
         
         if isEven(twistLinks(1))
             
@@ -42,29 +41,32 @@ function viewAngles(angleFile)
         
         if i == 1
             
-            p = plotBonds([], bonds, phi);
+            p = plotBonds([], bonds, phi, phi0);
             
         else
             
-            p = plotBonds(p, bonds, phi);
+            p = plotBonds(p, bonds, phi, phi0);
             
         end
         
         hold on
         
-        % lp = plot3(leadBond(1, :), leadBond(2, :), leadBond(3, :), 'y-', 'linewidth', 4);
-        % tp = plot3(tailBond(1, :), tailBond(2, :), tailBond(3, :), 'y-', 'linewidth', 4);
-        % mp = plot3(middleBond(1, :), middleBond(2, :), middleBond(3, :), 'g-', 'linewidth', 4);
+        lp = plot3(leadBond(1, :), leadBond(2, :), leadBond(3, :), 'y-', 'linewidth', 4);
+        tp = plot3(tailBond(1, :), tailBond(2, :), tailBond(3, :), 'y-', 'linewidth', 4);
+        mp = plot3(middleBond(1, :), middleBond(2, :), middleBond(3, :), 'g-', 'linewidth', 4);
+        
+        leadVector = leadBond(:,2) - leadBond(:,1);
+        offset = maxOffset(bonds, leadVector);
         
         titleLine = 'Phi: [ ';
         for j = 1:numTwists
-            titleLine = [ titleLine sprintf('%.1f ', angleList(i, j)*180/pi) ]; %#ok<AGROW>
+            titleLine = [ titleLine sprintf('%.1f ', angleList(i, j)) ]; %#ok<AGROW>
         end
         titleLine = [ titleLine ']' ]; %#ok<AGROW>
-        title(titleLine)
+        title({ sprintf('Offset = %.2f', offset) ; titleLine })
         
         pause
-        % delete(lp), delete(tp), delete(mp)
+        delete(lp), delete(tp), delete(mp)
         
     end
     

@@ -44,11 +44,11 @@ function analyzeAngles(angleFile)
         
         for index = 1:numTwists
             
-            fprintf(' %.0f', angles(index)*180/pi);
+            fprintf(' %.0f', angles(index));
             
         end
         
-        fprintf(' ], Sum = %.0f\n', sum(angles*180/pi))
+        fprintf(' ], Sum = %.0f\n', sum(angles))
         
     end
         

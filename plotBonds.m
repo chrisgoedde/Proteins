@@ -1,4 +1,4 @@
-function thePlot = plotBonds(thePlot, bonds, phi)
+function thePlot = plotBonds(thePlot, bonds, phi, phi0)
     
     linesMap = lines;
     theColor = cell(1, length(bonds)+1);
@@ -6,7 +6,7 @@ function thePlot = plotBonds(thePlot, bonds, phi)
     
     for i = 1:length(bonds)
         
-        if phi(i) == 0
+        if phi(i) == phi0
             
             theColor{i+1} = linesMap(1,:);
             
@@ -66,6 +66,8 @@ function thePlot = plotBonds(thePlot, bonds, phi)
         shg
         
     end
+    
+    title([ '\phi_0 = ' sprintf('%d', phi0) ])
     
 end
 

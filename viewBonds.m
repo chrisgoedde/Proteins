@@ -1,4 +1,4 @@
-function viewBonds(N, l, theta)
+function viewBonds(N, l, theta, phi0)
     
     % This function constructs a chain of N bonds and plots it. The input
     % parameters are
@@ -6,10 +6,15 @@ function viewBonds(N, l, theta)
     % l = length of each bond
     % theta = fixed bond angle
     
-    % We start by picking phi = 0 for all the bonds
+    % We start by picking phi = phi0 for all the bonds
     
-    phi = zeros(1, N);
-    theta = theta*pi/180;
+    phi = phi0 * ones(1, N);
+    
+    if length(theta) == 1
+        
+        theta = ones(1, N) * theta;
+        
+    end
     
     % Construct a chain of bonds. Each bond is described by a 3x2 matrix.
     % The first column of this matrix is the tail of the vector that
@@ -22,7 +27,8 @@ function viewBonds(N, l, theta)
     % plot the bonds on a 3d plot. The phi values are used to color the
     % bonds.
     
-    p = plotBonds([], bonds, phi);
+    p = plotBonds([], bonds, phi, phi0);
+    % displayBonds(bonds, theta, phi)
     
     while true
         
@@ -51,13 +57,14 @@ function viewBonds(N, l, theta)
             
         end
         
-        phi(index) = angles*pi/180;
+        phi(index) = angles;
         
         % Recalculate the bonds based on the new values of phi and replot
         % the entire chain.
         
         bonds = findBonds(N, l, theta, phi);
-        p = plotBonds(p, bonds, phi);
+        p = plotBonds(p, bonds, phi, phi0);
+        % displayBonds(bonds, theta, phi)
         
     end
     
