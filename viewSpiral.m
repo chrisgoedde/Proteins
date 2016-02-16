@@ -1,14 +1,25 @@
-function viewSpiral(angleFile)
+function viewSpiral(angleFile, angleCutoff, offsetCutoff)
     
     l = 1;
     
     angleList = []; theta0 = []; phi0 = []; twistLinks = []; N = [];
-    saveFile = sprintf('../Data/%s', angleFile);
+    saveFolder = sprintf('../Data/angle = %d/radius = %.1f', angleCutoff, offsetCutoff);
+    saveFile = sprintf('%s/%s.mat', saveFolder, angleFile);
+    
+    if ~exist(saveFile, 'file')
+        
+        fprintf('Can''t find file %s.\n', saveFile)
+        return
+    end
     load(saveFile);
     
     [ numAngles, numTwists ] = size(angleList);
     
     fprintf('There are %d sets of angles in file %s.mat.\n', numAngles, angleFile)
+    
+    phi = phi0 * ones(1, N);
+    regularBonds = findBonds(N, l, theta0 * ones(1, N), phi);
+    regularExtent = findExtent(regularBonds);
     
     for i = 1:numAngles
         
@@ -16,32 +27,17 @@ function viewSpiral(angleFile)
         phi(twistLinks) = angleList(i,:);
         
         bonds = findBonds(N, l, theta0 * ones(1, N), phi);
-        
-        if isEven(twistLinks(1))
-            
-            leadBond = [ bonds{1}(:,1) bonds{twistLinks(1)}(:,2) ];
-            
-        else
-            
-            leadBond = [ bonds{2}(:,1) bonds{twistLinks(1)}(:,2) ];
-            
-        end
-        
-        middleBond = [ bonds{twistLinks(1)+1}(:,1) bonds{twistLinks(end)+1}(:,2) ];
-        
-        if isEven(N-twistLinks(end))
-            
-            tailBond = [ bonds{twistLinks(end)+1}(:,2) bonds{end-1}(:,2) ];
-            
-        else
-            
-            tailBond = [ bonds{twistLinks(end)+1}(:,2) bonds{end}(:,2) ];
-            
-        end
+        [ leadBond, middleBond, tailBond, alignment, offset ] = findAlignment(bonds, twistLinks);
+        extent = findExtent(bonds);
         
         if i == 1
             
             p = plotBonds([], bonds, phi, phi0);
+            
+            pos = get(gcf, 'position');
+            pos(3) = pos(3)*1.5;
+            pos(4) = pos(4)*1.5;
+            set(gcf, 'position', pos)
             
         else
             
@@ -55,27 +51,20 @@ function viewSpiral(angleFile)
         tp = plot3(tailBond(1, :), tailBond(2, :), tailBond(3, :), 'y-', 'linewidth', 4);
         mp = plot3(middleBond(1, :), middleBond(2, :), middleBond(3, :), 'g-', 'linewidth', 4);
         
-        leadVector = leadBond(:,2) - leadBond(:,1);
-        offset = maxOffset(bonds, leadVector);
-        
         titleLine = 'Phi: [ ';
         for j = 1:numTwists
             titleLine = [ titleLine sprintf('%.1f ', angleList(i, j)) ]; %#ok<AGROW>
         end
         titleLine = [ titleLine ']' ]; %#ok<AGROW>
-        title({ sprintf('Offset = %.2f', offset) ; titleLine })
+        title({ sprintf('alignment = %.1f degrees, radius = %.2f, shrinkage = %.2f', ...
+            180*acos(alignment)/pi, offset, regularExtent-extent) ; titleLine })
         
+        view(135, 25)
         pause
         delete(lp), delete(tp), delete(mp)
         
     end
     
     close(gcf)
-    
-    function value = isEven(argument)
-        
-        value = mod(argument, 2) == 0;
-        
-    end
     
 end

@@ -1,10 +1,11 @@
-function findSpiral(theta0, phi0, twistLinks)
+function findSpiral(theta0, phi0, numTwists, angleCutoff, offsetCutoff)
     
     N = 30;
     l = 1;
     theta = theta0 * ones(1, N);
     
-    numTwists = length(twistLinks);
+    firstTwist = N/2 - floor(numTwists/2)+1;
+    twistLinks = firstTwist:(firstTwist+numTwists-1);
     
     count = 0;
     
@@ -13,12 +14,16 @@ function findSpiral(theta0, phi0, twistLinks)
     angleSet = angleSet(1:end-1);
     
     phi = phi0 * ones(1, N);
+    
+    regularBonds = findBonds(N, l, theta, phi);
+    regularExtent = findExtent(regularBonds);
+    
     numTries = numAngles^numTwists;
     angleList = [];
     
     for i = 1:numTries
         
-        if ~mod(i, 1000)
+        if ~mod(i, 10000)
             
             fprintf('Starting attempt %d of %d\n', i, numTries)
             
@@ -32,46 +37,22 @@ function findSpiral(theta0, phi0, twistLinks)
         
         bonds = findBonds(N, l, theta, phi);
         
-        if isEven(twistLinks(1))
-            
-            leadBond = [ bonds{1}(:,1) bonds{twistLinks(1)}(:,2) ];
-            
-        else
-            
-            leadBond = [ bonds{2}(:,1) bonds{twistLinks(1)}(:,2) ];
-            
-        end
-        
-        if isEven(N-twistLinks(end))
-            
-            tailBond = [ bonds{twistLinks(end)+1}(:,2) bonds{end-1}(:,2) ];
-            
-        else
-            
-            tailBond = [ bonds{twistLinks(end)+1}(:,2) bonds{end}(:,2) ];
-            
-        end
-        
-        middleBond = [ bonds{twistLinks(1)+1}(:,1) bonds{twistLinks(end)+1}(:,2) ];
-
-        leadVector = leadBond(:,2) - leadBond(:,1);
-        tailVector = tailBond(:,2) - tailBond(:,1);
-        
-        alignment = (leadVector' * tailVector)/(norm(leadVector)*norm(tailVector));
+        [ ~, ~, ~, alignment, offset ] = findAlignment(bonds, twistLinks);
+        extent = findExtent(bonds);
+        shrinkage = regularExtent - extent;
         
         % fprintf('alignment = %.2f\n', alignment)
         
-        if abs(1-alignment) < 0.0001
+        if abs(alignment) > cos(angleCutoff * pi/180)
             
             numTwists = length(twistLinks);
             
-            offset = maxOffset(bonds, leadVector);
-            
-            if offset <= 5 && twistAngles(1) ~= phi0 && twistAngles(end) ~= phi0
+            if offset <= offsetCutoff && twistAngles(1) ~= phi0 && twistAngles(end) ~= phi0
             
                 angleList = [ angleList ; twistAngles ]; %#ok<AGROW>
-                printAngles(offset, twistAngles)
+                printAngles(alignment, offset, shrinkage, twistAngles)
                 
+                %{
                 plotBonds([], bonds, phi, phi0);
                 hold on
                 
@@ -90,6 +71,7 @@ function findSpiral(theta0, phi0, twistLinks)
                 
                 pause
                 close(gcf)
+                %}
             
             end
                 
@@ -99,7 +81,13 @@ function findSpiral(theta0, phi0, twistLinks)
     
     if ~isempty(angleList)
         
-        saveFile = sprintf('../Data/Spiral-%d-%dx%d', round(theta0), round(phi0), length(twistLinks));
+        saveFolder = sprintf('../Data/angle = %d/radius = %.1f', angleCutoff, offsetCutoff);
+        if ~exist(saveFolder, 'dir')
+            
+            mkdir(saveFolder)
+            
+        end
+        saveFile = sprintf('%s/Spiral-%d-%dx%d', saveFolder, round(theta0), round(phi0), length(twistLinks));
         save(saveFile, 'angleList', 'N', 'theta0', 'phi0', 'twistLinks')
         
         [ rows, ~ ] = size(angleList);
@@ -147,9 +135,10 @@ function findSpiral(theta0, phi0, twistLinks)
         
     end
     
-    function printAngles(offset, twistAngles)
+    function printAngles(alignment, offset, shrinkage, twistAngles)
         
-        theString = sprintf('offset = %.2f, angles = [', max(offset));
+        theString = sprintf('alignment = %.2f degrees, radius = %.2f, shrinkage = %.2f, angles = [', ...
+            180*acos(alignment)/pi, max(offset), shrinkage);
         
         for index = 1: length(twistAngles)
             
@@ -160,12 +149,6 @@ function findSpiral(theta0, phi0, twistLinks)
         theString = [ theString ' ]' ];
         
         disp(theString)
-        
-    end
-    
-    function value = isEven(argument)
-        
-        value = mod(argument, 2) == 0;
         
     end
     

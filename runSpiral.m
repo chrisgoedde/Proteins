@@ -1,10 +1,8 @@
-function runSpiral(theta, phi)
+function runSpiral(theta, phi, angleCutoff, offsetCutoff)
     
-    start = 11;
+    for N = 3:12
     
-    for N = 2:9
-    
-        findSpiral(theta, phi, start:start+N)
+        findSpiral(theta, phi, N, angleCutoff, offsetCutoff)
         
     end
     
